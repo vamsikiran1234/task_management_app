@@ -28,6 +28,8 @@ class TaskManagementApp extends StatelessWidget {
         title: 'Flodo Task Manager',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.dark,
         home: const TaskListScreen(),
       ),
     );

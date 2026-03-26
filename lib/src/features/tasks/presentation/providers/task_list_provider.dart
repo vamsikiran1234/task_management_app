@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../data/task_repository.dart';
@@ -15,6 +17,7 @@ class TaskListProvider extends ChangeNotifier {
   String _searchQuery = '';
   TaskStatus? _statusFilter;
   bool _isMutating = false;
+  Timer? _searchDebounce;
 
   List<Task> get tasks => List.unmodifiable(_tasks);
   bool get isLoading => _isLoading;
@@ -22,6 +25,12 @@ class TaskListProvider extends ChangeNotifier {
   String get searchQuery => _searchQuery;
   TaskStatus? get statusFilter => _statusFilter;
   bool get isMutating => _isMutating;
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    super.dispose();
+  }
 
   Future<void> loadTasks() async {
     _isLoading = true;
@@ -46,7 +55,12 @@ class TaskListProvider extends ChangeNotifier {
 
   Future<void> setSearchQuery(String value) async {
     _searchQuery = value;
-    await loadTasks();
+    notifyListeners();
+
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      loadTasks();
+    });
   }
 
   Future<void> setStatusFilter(TaskStatus? value) async {

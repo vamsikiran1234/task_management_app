@@ -15,9 +15,26 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include, path
 
+
+def root_status(_request):
+    return JsonResponse(
+        {
+            'service': 'flodo-task-api',
+            'status': 'ok',
+            'docs_hint': 'Use /api/ for routes and /api/health/ for health checks.',
+        }
+    )
+
+
+def health_status(_request):
+    return JsonResponse({'status': 'ok'})
+
 urlpatterns = [
+    path('', root_status, name='root-status'),
     path('admin/', admin.site.urls),
     path('api/', include('tasks.urls')),
+    path('api/health/', health_status, name='api-health'),
 ]

@@ -163,6 +163,8 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_isEdit ? 'Edit Task' : 'Create Task'),
@@ -171,96 +173,110 @@ class _TaskFormScreenState extends State<TaskFormScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
             children: [
-              TextFormField(
-                controller: _titleController,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Title'),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Title is required.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _descriptionController,
-                minLines: 3,
-                maxLines: 5,
-                decoration: const InputDecoration(labelText: 'Description'),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Description is required.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 12),
-              InkWell(
-                onTap: _pickDueDate,
-                borderRadius: BorderRadius.circular(12),
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Due Date',
-                    suffixIcon: Icon(Icons.calendar_month),
-                  ),
-                  child: Text(
-                    _dueDate == null ? 'Select a date' : _dateFormat.format(_dueDate!),
-                  ),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface.withValues(alpha: 0.78),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: theme.dividerColor.withValues(alpha: 0.7)),
+                ),
+                child: Column(
+                  children: [
+                    TextFormField(
+                      controller: _titleController,
+                      textInputAction: TextInputAction.next,
+                      decoration: const InputDecoration(labelText: 'Title'),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Title is required.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _descriptionController,
+                      minLines: 3,
+                      maxLines: 5,
+                      decoration: const InputDecoration(labelText: 'Description'),
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Description is required.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: _pickDueDate,
+                      borderRadius: BorderRadius.circular(12),
+                      child: InputDecorator(
+                        decoration: const InputDecoration(
+                          labelText: 'Due Date',
+                          suffixIcon: Icon(Icons.calendar_month),
+                        ),
+                        child: Text(
+                          _dueDate == null ? 'Select a date' : _dateFormat.format(_dueDate!),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<TaskStatus>(
+                      value: _status,
+                      decoration: const InputDecoration(labelText: 'Status'),
+                      dropdownColor: const Color(0xFF121C30),
+                      items: TaskStatus.values
+                          .map(
+                            (status) => DropdownMenuItem<TaskStatus>(
+                              value: status,
+                              child: Text(status.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) async {
+                        if (value == null) {
+                          return;
+                        }
+                        setState(() {
+                          _status = value;
+                        });
+                        if (!_isEdit) {
+                          await context.read<TaskFormDraftProvider>().setStatus(value);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    DropdownButtonFormField<int?>(
+                      value: _blockedBy,
+                      decoration: const InputDecoration(labelText: 'Blocked By (Optional)'),
+                      dropdownColor: const Color(0xFF121C30),
+                      items: [
+                        const DropdownMenuItem<int?>(
+                          value: null,
+                          child: Text('None'),
+                        ),
+                        ..._blockedByOptions.map(
+                          (task) => DropdownMenuItem<int?>(
+                            value: task.id,
+                            child: Text('#${task.id} - ${task.title}'),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) async {
+                        setState(() {
+                          _blockedBy = value;
+                        });
+                        if (!_isEdit) {
+                          await context.read<TaskFormDraftProvider>().setBlockedBy(value);
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<TaskStatus>(
-                value: _status,
-                decoration: const InputDecoration(labelText: 'Status'),
-                items: TaskStatus.values
-                    .map(
-                      (status) => DropdownMenuItem<TaskStatus>(
-                        value: status,
-                        child: Text(status.label),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) async {
-                  if (value == null) {
-                    return;
-                  }
-                  setState(() {
-                    _status = value;
-                  });
-                  if (!_isEdit) {
-                    await context.read<TaskFormDraftProvider>().setStatus(value);
-                  }
-                },
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<int?>(
-                value: _blockedBy,
-                decoration: const InputDecoration(labelText: 'Blocked By (Optional)'),
-                items: [
-                  const DropdownMenuItem<int?>(
-                    value: null,
-                    child: Text('None'),
-                  ),
-                  ..._blockedByOptions.map(
-                    (task) => DropdownMenuItem<int?>(
-                      value: task.id,
-                      child: Text('#${task.id} - ${task.title}'),
-                    ),
-                  ),
-                ],
-                onChanged: (value) async {
-                  setState(() {
-                    _blockedBy = value;
-                  });
-                  if (!_isEdit) {
-                    await context.read<TaskFormDraftProvider>().setBlockedBy(value);
-                  }
-                },
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               FilledButton.icon(
                 onPressed: _isSaving ? null : _onSave,
                 icon: _isSaving

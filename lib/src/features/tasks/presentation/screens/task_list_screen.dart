@@ -118,67 +118,120 @@ class _TaskListScreenState extends State<TaskListScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TaskListProvider>();
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Task Manager'),
-      ),
-      body: Column(
+      appBar: AppBar(title: const Text('My Tasks')),
+      body: Stack(
         children: [
-          const _SearchAndFilterRow(),
-          Expanded(
-            child: Builder(
-              builder: (_) {
-                if (provider.isLoading && provider.tasks.isEmpty) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (provider.errorMessage != null && provider.tasks.isEmpty) {
-                  return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(provider.errorMessage!),
-                        const SizedBox(height: 12),
-                        FilledButton(
-                          onPressed: provider.loadTasks,
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                if (provider.tasks.isEmpty) {
-                  return const Center(
-                    child: Text('No tasks yet. Add your first task.'),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: provider.loadTasks,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: provider.tasks.length,
-                    itemBuilder: (context, index) {
-                      final task = provider.tasks[index];
-                      return TaskCard(
-                        task: task,
-                        onEdit: () => _openEditTask(task),
-                        onDelete: () => _confirmDelete(task),
-                      );
-                    },
-                  ),
-                );
-              },
+          Positioned(
+            top: -120,
+            right: -90,
+            child: Container(
+              width: 280,
+              height: 280,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    theme.colorScheme.primary.withValues(alpha: 0.22),
+                    theme.scaffoldBackgroundColor.withValues(alpha: 0),
+                  ],
+                ),
+              ),
             ),
+          ),
+          Positioned(
+            top: 120,
+            left: -100,
+            child: Container(
+              width: 250,
+              height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    theme.colorScheme.secondary.withValues(alpha: 0.14),
+                    theme.scaffoldBackgroundColor.withValues(alpha: 0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              const _SearchAndFilterRow(),
+              const SizedBox(height: 8),
+              Expanded(
+                child: Builder(
+                  builder: (_) {
+                    if (provider.isLoading && provider.tasks.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (provider.errorMessage != null && provider.tasks.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(provider.errorMessage!),
+                            const SizedBox(height: 12),
+                            FilledButton(
+                              onPressed: provider.loadTasks,
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    if (provider.tasks.isEmpty) {
+                      return const Center(
+                        child: Text('No tasks yet. Add your first task.'),
+                      );
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: provider.loadTasks,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 2, 16, 108),
+                        itemCount: provider.tasks.length,
+                        itemBuilder: (context, index) {
+                          final task = provider.tasks[index];
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween<double>(begin: 0, end: 1),
+                            duration: Duration(milliseconds: 180 + (index * 35)),
+                            curve: Curves.easeOutCubic,
+                            builder: (context, value, child) {
+                              return Transform.translate(
+                                offset: Offset(0, 10 * (1 - value)),
+                                child: Opacity(opacity: value, child: child),
+                              );
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: TaskCard(
+                                task: task,
+                                searchQuery: provider.searchQuery,
+                                onEdit: () => _openEditTask(task),
+                                onDelete: () => _confirmDelete(task),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: provider.isMutating ? null : _openCreateTask,
         icon: const Icon(Icons.add),
-        label: const Text('Add Task'),
+        label: const Text('Add Task', style: TextStyle(fontWeight: FontWeight.w700)),
       ),
     );
   }
@@ -203,53 +256,83 @@ class _SearchAndFilterRowState extends State<_SearchAndFilterRow> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<TaskListProvider>();
+    final theme = Theme.of(context);
     _controller.value = TextEditingValue(
       text: provider.searchQuery,
       selection: TextSelection.collapsed(offset: provider.searchQuery.length),
     );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              decoration: const InputDecoration(
-                hintText: 'Search by title',
-                prefixIcon: Icon(Icons.search),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface.withValues(alpha: 0.74),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.6)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _controller,
+                decoration: InputDecoration(
+                  hintText: 'Search by title',
+                  prefixIcon: Icon(Icons.search, color: theme.colorScheme.primary),
+                  suffixIcon: provider.isLoading
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: Padding(
+                            padding: EdgeInsets.all(12),
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : null,
+                ),
+                onChanged: (value) {
+                  provider.setSearchQuery(value);
+                },
               ),
-              onChanged: (value) {
-                provider.setSearchQuery(value);
-              },
             ),
-          ),
-          const SizedBox(width: 10),
-          DropdownButton<TaskStatus?>(
-            value: provider.statusFilter,
-            items: const [
-              DropdownMenuItem<TaskStatus?>(
-                value: null,
-                child: Text('All'),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF121C30),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: theme.dividerColor.withValues(alpha: 0.7)),
               ),
-              DropdownMenuItem<TaskStatus?>(
-                value: TaskStatus.toDo,
-                child: Text('To-Do'),
+              child: DropdownButton<TaskStatus?>(
+                value: provider.statusFilter,
+                underline: const SizedBox.shrink(),
+                dropdownColor: const Color(0xFF121C30),
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface),
+                items: const [
+                  DropdownMenuItem<TaskStatus?>(
+                    value: null,
+                    child: Text('All'),
+                  ),
+                  DropdownMenuItem<TaskStatus?>(
+                    value: TaskStatus.toDo,
+                    child: Text('To-Do'),
+                  ),
+                  DropdownMenuItem<TaskStatus?>(
+                    value: TaskStatus.inProgress,
+                    child: Text('In Progress'),
+                  ),
+                  DropdownMenuItem<TaskStatus?>(
+                    value: TaskStatus.done,
+                    child: Text('Done'),
+                  ),
+                ],
+                onChanged: (value) {
+                  provider.setStatusFilter(value);
+                },
               ),
-              DropdownMenuItem<TaskStatus?>(
-                value: TaskStatus.inProgress,
-                child: Text('In Progress'),
-              ),
-              DropdownMenuItem<TaskStatus?>(
-                value: TaskStatus.done,
-                child: Text('Done'),
-              ),
-            ],
-            onChanged: (value) {
-              provider.setStatusFilter(value);
-            },
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
