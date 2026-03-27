@@ -141,6 +141,73 @@ adb reverse tcp:8000 tcp:8000
 flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000/api
 ```
 
+### 4. Windows USB Debugging Setup (Exact Commands)
+
+If `adb` is not available globally in PATH, run it with the full executable path.
+
+1. Find the `adb.exe` location on your laptop.
+
+How to find it in plain English:
+
+- Open File Explorer.
+- Go to your Android SDK folder.
+- Open `platform-tools`.
+- Confirm `adb.exe` exists there.
+
+Common Windows location pattern:
+
+- `C:\Users\<YourUserName>\AppData\Local\Android\Sdk\platform-tools\adb.exe`
+
+2. Set that path in a PowerShell variable (replace with your own path):
+
+```powershell
+$adb = "C:\Users\<YourUserName>\AppData\Local\Android\Sdk\platform-tools\adb.exe"
+```
+
+3. Verify the connected device:
+
+```powershell
+& $adb devices
+```
+
+Expected output includes your device with `device` state.
+
+4. Verify ADB installation details:
+
+```powershell
+& $adb version
+```
+
+5. Create reverse tunnel from phone port 8000 to laptop port 8000:
+
+```powershell
+& $adb reverse tcp:8000 tcp:8000
+```
+
+Expected output:
+
+```text
+8000
+```
+
+6. Start Django backend (from `backend` folder):
+
+```powershell
+& "..\.venv\Scripts\python.exe" manage.py runserver 127.0.0.1:8000
+```
+
+7. Run Flutter app from project root:
+
+```powershell
+flutter run --dart-define=API_BASE_URL=http://127.0.0.1:8000/api
+```
+
+8. If reverse mapping is already used and you want to reset it:
+
+```powershell
+& $adb reverse --remove tcp:8000
+```
+
 ## Test And Quality Commands
 
 Frontend:
@@ -189,6 +256,7 @@ AI tools were used to accelerate architecture planning, API scaffolding, UI iter
 
 ## What I Am Proud Of
 
+- One key decision I’m proud of is handling task dependencies consistently across the backend and UI, ensuring blocked tasks behave correctly and preventing invalid task relationships.
 - Requirement fidelity: all must-have features implemented and validated.
 - Strong dependency handling for blocked tasks across model, API, and UI layers.
 - Practical reliability under real-device networking constraints with explicit connectivity guidance.
